@@ -1,54 +1,37 @@
 package main
 
 import (
-	"strconv"
 	"fmt"
-	"log"
+	"strconv"
 )
 
 const (
 	TYPE_BROADCAST            = 0 //Message shall reach every single node in the network once
-	TYPE_ROUTED_SHORTEST_PATH = 1 //Message shall reach it's destination with as few hops as possible
+	TYPE_ROUTED_SHORTEST_PATH = 1 //Message shall reach it's destination with as few Hops as possible
 	TYPE_ROUTING_ANNOUNCEMENT = 2 //Node is broadcasting routing information
 )
 
-type Path struct {
-	nextNode *Node
-}
-
 type Message struct {
-	id          int
-	messageType int
-	payload     []byte
-	senderMAC   int
-	receiverMAC int
-	hops        []int
-	maxHops     int
+	Id          int64
+	MessageType int
+	Payload     []byte
+	SenderMAC   MAC
+	ReceiverMAC MAC
+	Hops        []MAC
+	MaxHops     int
 }
 
 func (m Message) String() string {
-	s := "ID: " + strconv.Itoa(m.id) +
-		" From: " + fmt.Sprint(m.senderMAC) +
-		" To: " + fmt.Sprint(m.receiverMAC) +
-		" over [" + sprintMACs(m.hops) +
-		"] : " + string(m.payload)
+	s := "ID: " + strconv.FormatInt(m.Id, 16) +
+		" From: " + fmt.Sprint(m.SenderMAC) +
+		" To: " + fmt.Sprint(m.ReceiverMAC) +
+		" over [" + sprintMACs(m.Hops) +
+		"] : " + string(m.Payload)
 	return s
 }
 
 func (m Message) Equals(m2 Message) bool {
-	return m.id == m2.id && m.senderMAC == m2.senderMAC && m.receiverMAC == m2.receiverMAC
-}
-
-func sprintMACs(MACs []int) string {
-	s := ""
-	for _, MAC := range MACs {
-		s += strconv.Itoa(MAC) + " "
-	}
-	return s
-}
-
-func printMessage(message Message) {
-	log.Print(message)
+	return m.Id == m2.Id && m.SenderMAC == m2.SenderMAC && m.ReceiverMAC == m2.ReceiverMAC
 }
 
 func containsMessage(messages []Message, message Message) bool {
