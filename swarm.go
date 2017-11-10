@@ -1,6 +1,9 @@
 package main
 
-import "log"
+import (
+	"log"
+	"github.com/Pallinder/go-randomdata"
+)
 
 type Swarm []Node
 
@@ -18,17 +21,17 @@ func (s Swarm) init() {
 
 }
 
-func createSwarm(nodes, connections int) Swarm {
+func createSwarm(nodes, connections int64) Swarm {
 	var newSwarm Swarm
-	for i := 0; i < nodes; i++ {
-		newSwarm = append(newSwarm, Node{Mac: MAC(i)})
+	for i := int64(0); i < nodes; i++ {
+		newSwarm = append(newSwarm, Node{Mac: MAC(i), Name:randomdata.SillyName()})
 	}
 	newSwarm = createConnections(newSwarm, connections)
 	return newSwarm
 }
 
-func createConnections(swarm Swarm, connections int) Swarm {
-	for i := 0; i < connections; i++ {
+func createConnections(swarm Swarm, connections int64) Swarm {
+	for i := int64(0); i < connections; i++ {
 		n1 := getRandomWithout(0, len(swarm), -1)
 		n2 := getRandomWithout(0, len(swarm), n1)
 		if connected(swarm[n1], swarm[n2]) {

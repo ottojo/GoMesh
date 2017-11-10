@@ -1,17 +1,13 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/gorilla/mux"
-	"log"
 	"math/rand"
-	"net/http"
-	"strconv"
 	"time"
+	"github.com/marcusolsson/tui-go"
+	"fmt"
 )
 
-var debug bool = true
+var debug bool = false
 var message_delay_ms int = 0
 
 func init() {
@@ -21,21 +17,12 @@ func init() {
 var swarm Swarm
 
 func main() {
-
-	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/", Index)
-	router.HandleFunc("/nodes", nodeIndex)
-	router.HandleFunc("/nodes/{nodeMAC}", nodeOverview)
-	router.HandleFunc("/nodes/{nodeMAC}/send", nodeSend)
-	router.HandleFunc("/nodes/{nodeMAC}/messages", nodeMessages)
-
-	go http.ListenAndServe(":8080", router)
-
-	swarm = createSwarm(10, 15)
+	//i, _ := strconv.ParseInt(os.Args[1], 10, 32)
+	swarm = createSwarm(15, 50) //TODO while true if conn>nodes
 
 	swarm.init()
 
-	go swarm[0].Route(Message{0, TYPE_BROADCAST, []byte("This is a broadcast."),
+	swarm[0].Route(Message{0, TYPE_BROADCAST, []byte("This is a broadcast."),
 		swarm[0].Mac, swarm[len(swarm)-1].Mac,
 		[]MAC{}, 5})
 
@@ -43,41 +30,65 @@ func main() {
 		swarm[0].Mac, swarm[len(swarm)-1].Mac,
 		[]MAC{}, 10})
 
-	select {}
-}
+	nodeList := tui.NewList()
 
-func handler(w http.ResponseWriter, r *http.Request) {
+	sidebar := tui.NewVBox(nodeList)
+	sidebar.SetBorder(true)
 
-}
+	log := tui.NewVBox()
+	log.SetBorder(true)
 
-func Index(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Welcome!")
-}
+	/*for _, m := range posts {
+		log.Append(tui.NewHBox(
+			tui.NewLabel(m.time),
+			tui.NewPadder(1, 0, tui.NewLabel(fmt.Sprintf("<%s>", m.username))),
+			tui.NewLabel(m.message),
+			tui.NewSpacer(),
+		))
+	}*/
 
-func nodeIndex(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Nodes:")
-}
+	input := tui.NewEntry()
+	input.SetFocused(true)
+	input.SetSizePolicy(tui.Expanding, tui.Maximum)
 
-func nodeOverview(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	macString := vars["nodeMAC"]
-	mac, _ := strconv.Atoi(macString)
-	nodeJSON, err := json.Marshal(swarm[mac])
-	if err != nil {
-		log.Fatal(err)
+	inputBox := tui.NewHBox(input)
+	inputBox.SetBorder(true)
+	inputBox.SetSizePolicy(tui.Expanding, tui.Maximum)
+
+	currentNodeView := tui.NewVBox(tui.NewScrollArea(log), inputBox)
+	currentNodeView.SetSizePolicy(tui.Expanding, tui.Expanding)
+
+	input.OnSubmit(func(e *tui.Entry) {
+
+	})
+
+	root := tui.NewHBox(sidebar, currentNodeView)
+
+	var strings []string
+	for _, node := range swarm {
+		strings = append(strings, fmt.Sprintf("[%X] %s", int(node.Mac), node.Name))
 	}
-	fmt.Fprint(w, string(nodeJSON))
-}
 
-func nodeSend(w http.ResponseWriter, r *http.Request) {}
+	nodeList.AddItems(strings...)
+	nodeList.SetFocused(true)
+	nodeList.SetSelected(0)
+	nodeList.OnSelectionChanged(func(list *tui.List) {
+		for log.GetChildCount() != 0 {
+			log.Remove(0)
+		}
+		log.Append(tui.NewSpacer())
+		for _, line := range swarm[list.Selected()].Log {
+			log.Append(tui.NewHBox(
+				tui.NewLabel(line),
+			))
+		}
+	})
 
-func nodeMessages(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	macString := vars["nodeMAC"]
-	mac, _ := strconv.Atoi(macString)
-	messagesJSON, err := json.Marshal(swarm[mac].RoutedMessages)
-	if err != nil {
-		log.Fatal(err)
+	ui := tui.New(root)
+	ui.SetKeybinding("q", func() { ui.Quit() })
+
+	if err := ui.Run(); err != nil {
+		panic(err)
 	}
-	fmt.Fprintf(w, string(messagesJSON))
+
 }

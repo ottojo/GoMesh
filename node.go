@@ -6,13 +6,24 @@ import (
 	"log"
 	"strconv"
 	"time"
+	"strings"
 )
 
 type Node struct {
 	Mac            MAC
+	Name           string
 	neighbours     []*Node
 	RoutedMessages []Message
 	Paths          map[MAC]Path
+	Log            []string
+}
+
+func (n *Node) getLog() string {
+	out := ""
+	for _, line := range n.Log {
+		out += line + "\n"
+	}
+	return strings.TrimSuffix(out, "\n")
 }
 
 func (n Node) String() string {
