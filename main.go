@@ -3,7 +3,7 @@ package main
 import (
 	"math/rand"
 	"time"
-	"github.com/marcusolsson/tui-go"
+	"github.com/ottojo/tui-go"
 	"fmt"
 )
 
@@ -73,7 +73,7 @@ func main() {
 	nodeList.SetFocused(true)
 	nodeList.SetSelected(0)
 	nodeList.OnSelectionChanged(func(list *tui.List) {
-		for log.GetChildCount() != 0 {
+		for log.GetChildrenCount() != 0 {
 			log.Remove(0)
 		}
 		log.Append(tui.NewSpacer())
