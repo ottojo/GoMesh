@@ -2,7 +2,8 @@ package main
 
 import (
 	"log"
-	"github.com/Pallinder/go-randomdata"
+	"github.com/ottojo/go-randomdata"
+	"math/big"
 )
 
 type Swarm []Node
@@ -24,13 +25,18 @@ func (s Swarm) init() {
 func createSwarm(nodes, connections int64) Swarm {
 	var newSwarm Swarm
 	for i := int64(0); i < nodes; i++ {
-		newSwarm = append(newSwarm, Node{Mac: MAC(i), Name:randomdata.SillyName()})
+		newSwarm = append(newSwarm, Node{Mac: MAC(i), Name: randomdata.SillyName()})
 	}
 	newSwarm = createConnections(newSwarm, connections)
 	return newSwarm
 }
 
 func createConnections(swarm Swarm, connections int64) Swarm {
+	maxLinks := new(big.Int)
+	maxLinks.Binomial(int64(len(swarm)), 2)
+	if maxLinks.Cmp(big.NewInt(int64(connections))) == -1 {
+		connections = maxLinks.Int64()
+	}
 	for i := int64(0); i < connections; i++ {
 		n1 := getRandomWithout(0, len(swarm), -1)
 		n2 := getRandomWithout(0, len(swarm), n1)
